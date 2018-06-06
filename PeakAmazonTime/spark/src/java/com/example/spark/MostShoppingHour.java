@@ -31,23 +31,25 @@ import com.maxmind.geoip.LookupService;
 public class MostShoppingHour {
     @SuppressWarnings("serial")
 	static class Transformer implements Function<String, Row> {
-        Pattern linePattern1 = Pattern.compile("(.*?) .*?\\[(.*?)\\].*?");
+    	Pattern linePattern1 = Pattern.compile("(.*?) .*?\\[(.*?)\\].*");
+        Pattern linePattern2 = Pattern.compile(".{11}:([0-9]{2}):.*");
         static LookupService cl;
         static Object lock = new Object();
         @Override
         public Row call(String line) throws Exception {
             Matcher m1 = linePattern1.matcher(line);
+           
             String ip = null;
-            int hour = -1;
+            String hour = null;
             String dt = null;
             if (m1.find()) {
                 ip = m1.group(1);
                 dt = m1.group(2);
-
-                Calendar formatdt = new GregorianCalendar();
-                Date date = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss +SSSS", Locale.ENGLISH).parse(dt);
-                formatdt.setTime(date);
-                hour = formatdt.get(Calendar.HOUR_OF_DAY);
+                Matcher m2 = linePattern2.matcher(dt);
+                if (m2.find()) {
+                    hour = m2.group(1);
+                }
+                
             }
             synchronized(lock) {
                 if (cl == null) {
@@ -56,7 +58,7 @@ public class MostShoppingHour {
                 }
             }
             Location loc = cl.getLocation(ip);
-            return RowFactory.create(ip, loc!=null?loc.countryCode:null, hour);
+            return RowFactory.create(loc!=null?loc.countryCode:null, hour);
         }
     }
     
@@ -72,18 +74,17 @@ public class MostShoppingHour {
 		         .map(new Transformer());
 
 		List<StructField> accessLogFields = new ArrayList<>();
-		accessLogFields.add(DataTypes.createStructField("ip", DataTypes.StringType, true));
 		accessLogFields.add(DataTypes.createStructField("country", DataTypes.StringType, true));
-		accessLogFields.add(DataTypes.createStructField("dt", DataTypes.IntegerType, true));
+		accessLogFields.add(DataTypes.createStructField("hour", DataTypes.StringType, true));
         StructType accessLogType = DataTypes.createStructType(accessLogFields);
-
+        
         Dataset<Row> accessLogDf = spark.createDataFrame(accessLogRDD, accessLogType)
-                .distinct()
                 .where("country = 'US'");
 
-        accessLogDf.groupBy("dt").agg(functions.count("*").as("c"))
-	    .sort(functions.desc("c"))
-	    .write()
-	    .csv("output");
+        accessLogDf.groupBy("hour")
+                .agg(functions.count("*").as("h"))
+                .sort(functions.desc("h"))
+                .write()
+                .csv("output");
 	}
 }
