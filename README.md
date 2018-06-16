@@ -1,6 +1,6 @@
 # Big-data-practice
 
-Peak Amazon Time
+1. Peak Amazon Time
 Write a program to find out which hour US people do most shopping
  * 1. Use access_log_sample as input
  * 2. Count the times US people visit amazon.com
@@ -9,5 +9,5 @@ Write a program to find out which hour US people do most shopping
 
 This program has two version, spark and pig.
 
-Google Play Store Crawler
+2. Google Play Store Crawler
 Get app information from Google Play Store using Nutch.
