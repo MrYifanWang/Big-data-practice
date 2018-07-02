@@ -1,5 +1,4 @@
 commit 7cf95ef3bd61497a4359f091406c8c3e186fb06b
-Author: Daniel Dai <daijy@hortonworks.com>
 Date:   Thu Feb 9 22:00:45 2017 -0800
 
     Fix skew
